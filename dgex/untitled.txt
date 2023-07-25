@@ -1,0 +1,112 @@
+NoneType = type(None)
+from typing import Union
+import numpy as np
+
+utils = dgex.utils
+
+
+class DifferentialGeneExpression(utils.ABCParse):
+    def __init__(self, adata, use_key: Union[str, NoneType] = None):
+
+        self._configure(locals())
+
+    def _configure(self, kwargs):
+
+        self.__parse__(kwargs, public=["adata"])
+
+        self._INFO = utils.InfoMessage()
+        self._obs_df = self.adata.obs.copy()
+        self._var_df = self.adata.var.copy()
+        self._var_idx = self._var_df.index
+
+    def _filter_null_expression(self, group_adata):
+
+        group_counts = (group_adata.X > 0).sum(0).A
+        return np.where(group_counts > 0)[0]
+
+    def group(self, groupby, group1, group2):
+
+        self._groupby = groupby
+        self.grouped_data = dgex.GroupedData(self.adata.obs, groupby=groupby)
+        self.grouped_data(group1=group1, group2=group2)
+
+        self.group1_adata = self.adata[self.grouped_data.group1_idx]
+        self.group2_adata = self.adata[self.grouped_data.group2_idx]
+
+    def _filter_null_expression(self):
+
+        self.filt1_1 = self._filter_null_expression(self.group1_adata)
+        self.filt1_2 = self._filter_null_expression(self.group2_adata)
+
+    def _filter_on_min_fraction_expressed(self, min_frac_expr=0.05):
+
+        X_raw_group1 = self.adata[self.group1_idx].X.copy()
+        X_raw_group2 = self.adata[self.group2_idx].X.copy()
+
+        group1_expr = (X_raw_group1 > 0).sum(0) / len(self.group1_idx)
+        group2_expr = (X_raw_group2 > 0).sum(0) / len(self.group2_idx)
+
+        min_expr_filter_idx = (group1_expr > min_frac_expr) | (
+            group2_expr > min_frac_expr
+        )
+
+        return self._var_idx[min_expr_filter_idx]
+    
+DiffGEX = DifferentialGeneExpression(adata)
+DiffGEX.group(
+    groupby="Cell type annotation", group1="Monocyte", group2="Undifferentiated"
+)
+DiffGEX._filter_null_expression()
+
+
+class MinExpressionFilter:
+    def __init__(self, adata):
+        ...
+
+    @property
+    def X_raw_group1(self):
+        self._adata[self._group1_idx].X.copy()
+
+    @property
+    def X_raw_group2(self):
+        
+        
+class GeneFiltering:
+    def __init__(self, min_frac_expr=0.05):
+        ...
+        
+def _filter_on_min_fraction_expressed(self, min_frac_expr):
+
+        X_raw_group1 = self._adata[self._group1_idx].X.copy()
+        X_raw_group2 = self._adata[self._group2_idx].X.copy()
+
+        group1_expr = (X_raw_group1 > 0).sum(0) / len(self._group1_idx)
+        group2_expr = (X_raw_group2 > 0).sum(0) / len(self._group2_idx)
+
+        min_expr_filter_idx = (group1_expr > min_frac_expr) | (
+            group2_expr > min_frac_expr
+        )
+
+        return self._var_idx[min_expr_filter_idx]
+
+    def _filter_genes(self, min_frac_expr):
+
+        self._group1_null_expr_mask = self._filter_null_expression(self._group1_idx)
+        self._group2_null_expr_mask = self._filter_null_expression(self._group2_idx)
+
+        self._filtered_var_idx = self._var_idx[
+            np.unique(np.append(self._group1_null_expr_mask, self._group2_null_expr_mask))
+        ]
+        print(f"{self._msg}Filtering null-expression genes.\n\t   Genes remaining: {self.n_genes}")
+        if min_frac_expr > 0:
+            self._filtered_var_idx = self._filter_on_min_fraction_expressed(
+                min_frac_expr
+            )
+            print(
+                f"{self._msg}Filtering on minimum fraction of detection: {min_frac_expr*100}%.\n\t   Genes remaining: {self.n_genes}"
+            )
+
+        self._filtered_adata = self._adata[:, self._filtered_var_idx]
+
+        self._group1_adata = self._filtered_adata[self._group1_idx]
+        self._group2_adata = self._filtered_adata[self._group2_idx]
