@@ -1,10 +1,6 @@
 # dgex
 Differential Gene Expression
 
-
-Okay, here's a brief usage guide for the `DifferentialExpression` class that you can include in your README:
-
-```markdown
 ## `dgex` Usage
 
 The `dgex` module provides a `DifferentialExpression` class for performing differential gene expression analysis on AnnData objects.
@@ -58,7 +54,7 @@ The `dgex` module provides a `DifferentialExpression` class for performing diffe
     print(significant_de_genes_df.head())
     ```
 
-### Output DataFrame
+### Output `DataFrame`
 
 The resulting DataFrame typically includes:
 *   `pval`: Raw p-value from the t-test.
@@ -71,5 +67,4 @@ The resulting DataFrame typically includes:
 *   `ranksum_adj_pvals`: Benjamini-Hochberg adjusted p-value from the rank-sum test.
 *   `ranksum_FDR_BH_passing`: Boolean indicating if the gene passed the rank-sum test FDR threshold.
 
-The index of the DataFrame will be the gene identifiers.
-```
+The index of the `DataFrame` will be the gene identifiers.
